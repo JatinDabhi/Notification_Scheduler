@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../app_controller.dart';
@@ -29,7 +30,7 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
     final desc = descController.text.trim();
 
     if (title.isEmpty || desc.isEmpty) {
-      Get.snackbar('Error', 'Please fill all fields');
+      Get.snackbar('Error', 'Please fill all fields', backgroundColor: Colors.red.shade100);
       return;
     }
 
@@ -41,19 +42,19 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
         desc,
       );
       if (!mounted) return;
-      Get.back();
-      Get.snackbar('Success', 'Notification queued successfully');
+      Get.back(result: true);
+      Get.snackbar('Success', 'Notification queued successfully', backgroundColor: Colors.green.shade100);
     } catch (e) {
       if (!mounted) return;
       setState(() => isSaving = false);
-      Get.snackbar('Error', 'Failed to save: $e');
+      Get.snackbar('Error', 'Failed to save: $e', backgroundColor: Colors.red.shade100);
     }
   }
 
   Future<void> saveBulk() async {
     final text = bulkJsonController.text.trim();
     if (text.isEmpty) {
-      Get.snackbar('Error', 'Please paste the JSON data');
+      Get.snackbar('Error', 'Please paste the JSON data', backgroundColor: Colors.red.shade100);
       return;
     }
 
@@ -92,161 +93,350 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
       );
 
       if (!mounted) return;
-      Get.back();
+      Get.back(result: true);
       Get.snackbar(
         'Success',
         '${formattedList.length} notifications queued successfully',
+        backgroundColor: Colors.green.shade100,
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => isSaving = false);
-      Get.snackbar('Invalid JSON', e.toString());
+      Get.snackbar('Invalid JSON', e.toString(), backgroundColor: Colors.red.shade100);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            'Add Notification',
-            style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-          ),
-          backgroundColor: Colors.deepPurple,
-          foregroundColor: Colors.white,
-          bottom: const TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
-            tabs: [
-              Tab(text: 'Single Add'),
-              Tab(text: 'Bulk Paste (JSON)'),
-            ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light.copyWith(
+        statusBarColor: Colors.transparent,
+      ),
+      child: DefaultTabController(
+        length: 2,
+        child: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Scaffold(
+            backgroundColor: const Color(0xFFF4F7FC),
+            body: Column(
+              children: [
+                _buildTopHeader(),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      _buildSingleAddTab(),
+                      _buildBulkAddTab(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        body: TabBarView(
+      ),
+    );
+  }
+
+  Widget _buildTopHeader() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // SINGLE ADD TAB
             Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Row(
                 children: [
-                  TextField(
-                    controller: titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Title',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: descController,
-                    maxLines: 4,
-                    decoration: const InputDecoration(
-                      labelText: 'Description / Body',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: isSaving ? null : saveSingle,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
-                        foregroundColor: Colors.white,
+                  InkWell(
+                    onTap: () => Get.back(),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: isSaving
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(
-                              'Save to Queue',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                      child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 24),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    'Add Notification',
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 8),
+            TabBar(
+              indicatorSize: TabBarIndicatorSize.label,
+              indicatorColor: Colors.white,
+              indicatorWeight: 3,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white.withOpacity(0.6),
+              labelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15),
+              unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15),
+              dividerColor: Colors.transparent,
+              tabs: const [
+                Tab(text: 'Single Add'),
+                Tab(text: 'Bulk Paste (JSON)'),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
 
-            // BULK JSON TAB
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange.shade200),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.info_outline, color: Colors.orange),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Paste your JSON array here. It must contain "title" and "body".\nExample:\n[{"title":"A", "body":"B"}]',
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              color: Colors.orange.shade900,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+  Widget _buildSingleAddTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle(
+            icon: Icons.notifications_active_rounded,
+            title: 'Notification Details',
+            subtitle: 'Enter the title and message body',
+          ),
+          const SizedBox(height: 20),
+          _buildInputField(
+            controller: titleController,
+            hint: 'Title (e.g. 50% Off Today!)',
+            icon: Icons.title_rounded,
+          ),
+          const SizedBox(height: 16),
+          _buildInputField(
+            controller: descController,
+            hint: 'Description / Message Body',
+            icon: Icons.notes_rounded,
+            maxLines: 5,
+          ),
+          const SizedBox(height: 40),
+          _buildSaveButton(onPressed: saveSingle),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBulkAddTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle(
+            icon: Icons.data_array_rounded,
+            title: 'Bulk Import JSON',
+            subtitle: 'Paste an array of notifications',
+          ),
+          const SizedBox(height: 20),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.01),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FAFB),
+                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+                    border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
                   ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: TextField(
-                      controller: bulkJsonController,
-                      maxLines: 100, // Makes it expand fully
-                      decoration: const InputDecoration(
-                        hintText:
-                            '[\n  {\n    "title": "...",\n    "body": "..."\n  }\n]',
-                        border: OutlineInputBorder(),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'JSON Format',
+                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF6B7280)),
                       ),
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 12,
-                      ),
-                    ),
+                      Icon(Icons.paste_rounded, size: 16, color: Colors.grey.shade400),
+                    ],
                   ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      onPressed: isSaving ? null : saveBulk,
-                      icon: isSaving
-                          ? const SizedBox.shrink()
-                          : const Icon(Icons.save_alt),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple,
-                        foregroundColor: Colors.white,
-                      ),
-                      label: isSaving
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : Text(
-                              'Save Bulk to Queue',
-                              style: GoogleFonts.inter(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                    ),
+                ),
+                TextField(
+                  controller: bulkJsonController,
+                  maxLines: 12,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    color: Color(0xFF374151),
+                    height: 1.6,
                   ),
-                ],
+                  decoration: InputDecoration(
+                    hintText: '[\n  {\n    "title": "...",\n    "body": "..."\n  }\n]',
+                    hintStyle: TextStyle(color: Colors.grey.shade400),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(20),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 40),
+          _buildSaveButton(onPressed: saveBulk, label: 'Queue Bulk Notifications'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle({required IconData icon, required String title, required String subtitle}) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFE0E7FF),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: const Color(0xFF6366F1), size: 20),
+        ),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF1F2937),
+              ),
+            ),
+            Text(
+              subtitle,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                color: const Color(0xFF6B7280),
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInputField({required TextEditingController controller, required String hint, required IconData icon, int maxLines = 1}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          )
+        ],
+      ),
+      child: TextField(
+        controller: controller,
+        maxLines: maxLines,
+        style: GoogleFonts.inter(color: const Color(0xFF1F2937)),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: GoogleFonts.inter(color: const Color(0xFF9CA3AF), fontSize: 14),
+          prefixIcon: maxLines == 1 
+              ? Icon(icon, color: const Color(0xFF8B5CF6))
+              : Padding(
+                  padding: const EdgeInsets.only(bottom: 80), // Align icon to top for multiline
+                  child: Icon(icon, color: const Color(0xFF8B5CF6)),
+                ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: Colors.grey.shade200),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: const BorderSide(color: Color(0xFF8B5CF6), width: 1.5),
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSaveButton({required VoidCallback onPressed, String label = 'Save to Queue'}) {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      child: ElevatedButton.icon(
+        onPressed: isSaving ? null : onPressed,
+        icon: isSaving
+            ? const SizedBox.shrink()
+            : const Icon(Icons.cloud_upload_rounded, color: Colors.white),
+        label: isSaving
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+              )
+            : Text(
+                label,
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
       ),
     );

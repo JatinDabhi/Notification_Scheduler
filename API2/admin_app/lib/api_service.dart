@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'https://9200e5316d998de5-49-36-127-48.serveousercontent.com/api';
+  static const String baseUrl = 'https://notification-scheduler-l4b0.onrender.com/api';
 
   // Localtunnel requires this header to bypass the warning screen and return JSON directly
   static const Map<String, String> defaultHeaders = {

@@ -112,9 +112,9 @@ const initScheduler = async () => {
               }
 
               const cronExpression = `${minute} ${hour} * * *`;
-              console.log(`📅 [${appId}] Job scheduled for daily execution at ${timeStr} (Cron: ${cronExpression})`);
+              console.log(`📅 [${appId}] Job scheduled for daily execution at ${timeStr} (Cron: ${cronExpression}, TZ: Asia/Kolkata)`);
               
-              const job = schedule.scheduleJob(cronExpression, async () => {
+              const job = schedule.scheduleJob({ rule: cronExpression, tz: 'Asia/Kolkata' }, async () => {
                 await executeJob(appId);
               });
 
