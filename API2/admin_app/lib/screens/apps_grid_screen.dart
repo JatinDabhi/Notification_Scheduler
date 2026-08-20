@@ -48,7 +48,11 @@ class _AppsGridScreenState extends State<AppsGridScreen> {
                 const SizedBox(height: 30),
                 _buildAnimated(
                   delay: 100,
-                  child: Obx(() => _buildBanner(appController.apps.length)),
+                  child: Obx(() {
+                    // Explicitly track the apps list to fix GetX error
+                    final appCount = appController.apps.toList().length;
+                    return _buildBanner(appCount);
+                  }),
                 ),
                 const SizedBox(height: 24),
                 _buildAnimated(
@@ -68,9 +72,16 @@ class _AppsGridScreenState extends State<AppsGridScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Obx(() => appController.isLoading.value 
+                Obx(() {
+                  // Explicitly read observables to satisfy GetX Obx requirements
+                  final isLoading = appController.isLoading.value;
+                  // Explicitly read list to track it
+                  appController.apps.toList(); 
+                  
+                  return isLoading 
                     ? const Center(child: CircularProgressIndicator()) 
-                    : _buildAppsList(appController)),
+                    : _buildAppsList(appController);
+                }),
                 const SizedBox(height: 24),
                 _buildAnimated(
                   delay: 600,

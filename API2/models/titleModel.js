@@ -43,6 +43,7 @@ const titleSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    autoCreate: false, // Prevents creating empty collections on model load
   }
 );
 
@@ -51,7 +52,8 @@ const models = {};
 
 const getTitleModel = (appId) => {
   const cleanAppId = appId.trim().toLowerCase();
-  const collectionName = `${cleanAppId}_notifications`;
+  const capitalizedAppId = cleanAppId.charAt(0).toUpperCase() + cleanAppId.slice(1);
+  const collectionName = `${capitalizedAppId} Notification`;
   
   if (mongoose.models[collectionName]) {
     return mongoose.models[collectionName];

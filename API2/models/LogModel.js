@@ -30,12 +30,13 @@ const logSchema = new mongoose.Schema({
     default: Date.now,
     expires: 30 * 24 * 60 * 60 // Auto-delete logs after 30 days
   },
-});
+}, { autoCreate: false });
 
 // Using dynamic collections for logs as well
 const getLogModel = (appId) => {
   const cleanAppId = appId.trim().toLowerCase();
-  const collectionName = `${cleanAppId}_logs`;
+  const capitalizedAppId = cleanAppId.charAt(0).toUpperCase() + cleanAppId.slice(1);
+  const collectionName = `${capitalizedAppId} Log`;
   
   if (mongoose.models[collectionName]) {
     return mongoose.models[collectionName];
