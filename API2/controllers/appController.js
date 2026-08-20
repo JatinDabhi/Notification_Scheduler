@@ -119,7 +119,7 @@ exports.deleteApp = async (req, res) => {
 
     // Drop dynamic collections associated with the app
     const cleanAppId = appId.trim().toLowerCase();
-    const collectionsToDrop = [`${cleanAppId}_titles`, `${cleanAppId}_settings`, `${cleanAppId}_logs`];
+    const collectionsToDrop = [`${cleanAppId}_notifications`, `${cleanAppId}_schedules`, `${cleanAppId}_logs`];
     for (const collectionName of collectionsToDrop) {
       try {
         await mongoose.connection.db.dropCollection(collectionName);

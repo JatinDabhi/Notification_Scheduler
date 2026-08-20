@@ -51,7 +51,7 @@ const models = {};
 
 const getTitleModel = (appId) => {
   const cleanAppId = appId.trim().toLowerCase();
-  const collectionName = `${cleanAppId}_titles`;
+  const collectionName = `${cleanAppId}_notifications`;
   
   if (mongoose.models[collectionName]) {
     return mongoose.models[collectionName];

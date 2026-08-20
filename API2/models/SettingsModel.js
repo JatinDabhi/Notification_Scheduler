@@ -23,7 +23,7 @@ const models = {};
 
 const getSettingsModel = (appId) => {
   const cleanAppId = appId.trim().toLowerCase();
-  const collectionName = `${cleanAppId}_settings`;
+  const collectionName = `${cleanAppId}_schedules`;
   
   if (mongoose.models[collectionName]) {
     return mongoose.models[collectionName];
