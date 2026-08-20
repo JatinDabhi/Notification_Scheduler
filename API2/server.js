@@ -7,11 +7,13 @@ const connectDB = require("./config/db");
 const titleRoutes = require("./routes/titleRoutes");
 const settingsRoutes = require("./routes/settingsRoutes");
 const { initScheduler } = require("./services/schedulerService");
+const { syncAppsFromConfig } = require("./config/firebase-keys");
 
 const app = express();
 
 // Connect to MongoDB Database and initialize background job scheduler
-connectDB().then(() => {
+connectDB().then(async () => {
+  await syncAppsFromConfig();
   initScheduler();
 });
 

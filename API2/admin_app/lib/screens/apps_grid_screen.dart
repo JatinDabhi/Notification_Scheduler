@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../app_controller.dart';
 import 'app_dashboard_screen.dart';
-import 'add_app_screen.dart';
 
 class AppsGridScreen extends StatefulWidget {
   const AppsGridScreen({Key? key}) : super(key: key);
@@ -82,11 +81,6 @@ class _AppsGridScreenState extends State<AppsGridScreen> {
                     ? const Center(child: CircularProgressIndicator()) 
                     : _buildAppsList(appController);
                 }),
-                const SizedBox(height: 24),
-                _buildAnimated(
-                  delay: 600,
-                  child: _buildAddNewAppCard(),
-                ),
                 const SizedBox(height: 30),
               ],
             ),
@@ -455,40 +449,6 @@ class _AppsGridScreenState extends State<AppsGridScreen> {
                     ],
                   ),
                 ),
-                // Actions
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert_rounded, color: Color(0xFF9CA3AF), size: 22),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 4,
-                  onSelected: (val) {
-                    if (val == 'remove') {
-                      Get.defaultDialog(
-                        title: 'Remove App?',
-                        middleText: 'Are you sure you want to remove $appId from this list?',
-                        textConfirm: 'Yes',
-                        textCancel: 'No',
-                        confirmTextColor: Colors.white,
-                        buttonColor: const Color(0xFFEF4444),
-                        onConfirm: () {
-                          controller.removeApp(appId);
-                          Get.back();
-                        },
-                      );
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'remove',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete_rounded, color: Color(0xFFEF4444), size: 18),
-                          SizedBox(width: 8),
-                          Text('Remove App', style: TextStyle(color: Color(0xFFEF4444), fontWeight: FontWeight.w600, fontSize: 14)),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
@@ -497,100 +457,4 @@ class _AppsGridScreenState extends State<AppsGridScreen> {
     );
   }
 
-  Widget _buildAddNewAppCard() {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F3FF),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF8B5CF6).withOpacity(0.1), width: 2),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => Get.to(() => const AddAppScreen()),
-          borderRadius: BorderRadius.circular(20),
-          highlightColor: const Color(0xFF8B5CF6).withOpacity(0.1),
-          splashColor: const Color(0xFF8B5CF6).withOpacity(0.2),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Add New App',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1F2937),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Add and manage your new applications in one place.',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          color: const Color(0xFF6B7280),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF6366F1).withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            )
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.add_rounded, size: 18, color: Colors.white),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Add New App',
-                              style: GoogleFonts.inter(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 1,
-                  child: Container(
-                    height: 90,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF8B5CF6).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.widgets_rounded, size: 48, color: Color(0xFF8B5CF6)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }

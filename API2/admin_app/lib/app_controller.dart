@@ -40,20 +40,5 @@ class AppController extends GetxController {
     await prefs.setString('currentAppId', appId);
   }
 
-  Future<void> removeApp(String appId) async {
-    try {
-      final response = await ApiService.deleteApp(appId);
-      if (response['success'] == true) {
-        apps.removeWhere((app) => app['appId'] == appId);
-        if (currentAppId.value == appId) {
-          currentAppId.value = '';
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.remove('currentAppId');
-        }
-      }
-    } catch (e) {
-      print('Error deleting app: $e');
-      Get.snackbar('Error', 'Failed to delete app: $e');
-    }
-  }
+
 }

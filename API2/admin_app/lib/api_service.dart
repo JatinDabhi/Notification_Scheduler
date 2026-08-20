@@ -135,34 +135,9 @@ class ApiService {
   }
 
   // App Registration
-  static Future<Map<String, dynamic>> registerApp(
-    String appId,
-    String appName,
-    String firebaseKeyJson,
-  ) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/apps/register'),
-      headers: defaultHeaders,
-      body: jsonEncode({
-        'appId': appId,
-        'appName': appName,
-        'firebaseKeyJson': firebaseKeyJson,
-      }),
-    );
-    return _processResponse(response);
-  }
-
   static Future<Map<String, dynamic>> getAllApps() async {
     final response = await http.get(
       Uri.parse('$baseUrl/apps'),
-      headers: defaultHeaders,
-    );
-    return _processResponse(response);
-  }
-
-  static Future<Map<String, dynamic>> deleteApp(String appId) async {
-    final response = await http.delete(
-      Uri.parse('$baseUrl/apps/$appId'),
       headers: defaultHeaders,
     );
     return _processResponse(response);
