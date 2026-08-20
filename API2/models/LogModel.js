@@ -37,11 +37,11 @@ const getLogModel = (appId) => {
   const cleanAppId = appId.trim().toLowerCase();
   const capitalizedAppId = cleanAppId.charAt(0).toUpperCase() + cleanAppId.slice(1);
   const collectionName = `${capitalizedAppId} Log`;
-  
+
   if (mongoose.models[collectionName]) {
     return mongoose.models[collectionName];
   }
-  
+
   return mongoose.model(collectionName, logSchema, collectionName);
 };
 

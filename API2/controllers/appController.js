@@ -104,7 +104,7 @@ exports.getAllApps = async (req, res) => {
 exports.deleteApp = async (req, res) => {
   try {
     const { appId } = req.params;
-    
+
     // Delete from DB
     const deletedApp = await AppModel.findOneAndDelete({ appId });
     if (!deletedApp) {
@@ -128,7 +128,7 @@ exports.deleteApp = async (req, res) => {
         // Ignore if collection doesn't exist
       }
     }
-    
+
     // Reload scheduler to cancel any cron jobs for the deleted app
     await initScheduler();
 

@@ -26,11 +26,11 @@ const getSettingsModel = (appId) => {
   const cleanAppId = appId.trim().toLowerCase();
   const capitalizedAppId = cleanAppId.charAt(0).toUpperCase() + cleanAppId.slice(1);
   const collectionName = `${capitalizedAppId} Schedule`;
-  
+
   if (mongoose.models[collectionName]) {
     return mongoose.models[collectionName];
   }
-  
+
   if (models[collectionName]) {
     return models[collectionName];
   }
