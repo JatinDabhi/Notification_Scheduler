@@ -35,35 +35,28 @@ exports.registerApp = async (req, res) => {
       });
     }
 
-    // 2. Ensure firebase_keys folder exists
-    const keysDir = path.join(__dirname, '..', 'config', 'firebase_keys');
-    if (!fs.existsSync(keysDir)) {
-      fs.mkdirSync(keysDir, { recursive: true });
-    }
+    // 2. Save App in Database first
+    const finalAppName = appName || cleanAppId;
+    await AppModel.findOneAndUpdate(
+      { appId: cleanAppId },
+      { 
+        appName: finalAppName,
+        firebaseKeyJson: typeof firebaseKeyJson === 'string' ? firebaseKeyJson : JSON.stringify(firebaseKeyJson)
+      },
+      { upsert: true, new: true }
+    );
 
-    // 3. Write JSON file
-    const keyPath = path.join(keysDir, `${cleanAppId}.json`);
-    fs.writeFileSync(keyPath, JSON.stringify(parsedJson, null, 2));
-
-    // 4. Initialize Firebase App immediately to verify it works
+    // 3. Initialize Firebase App immediately to verify it works
     try {
       await reinitializeFirebaseApp(cleanAppId);
     } catch (firebaseErr) {
-      // If initialization fails, we might want to delete the invalid file
-      if (fs.existsSync(keyPath)) fs.unlinkSync(keyPath);
+      // If initialization fails, delete the invalid DB record
+      await AppModel.findOneAndDelete({ appId: cleanAppId });
       return res.status(500).json({
         success: false,
         message: "Failed to initialize Firebase app: " + firebaseErr.message,
       });
     }
-
-    // 5. Save App in Database
-    const finalAppName = appName || cleanAppId;
-    await AppModel.findOneAndUpdate(
-      { appId: cleanAppId },
-      { appName: finalAppName },
-      { upsert: true, new: true }
-    );
 
     res.status(200).json({
       success: true,
@@ -109,12 +102,6 @@ exports.deleteApp = async (req, res) => {
     const deletedApp = await AppModel.findOneAndDelete({ appId });
     if (!deletedApp) {
       return res.status(404).json({ success: false, message: "App not found" });
-    }
-
-    // Delete JSON file
-    const keyPath = path.join(__dirname, '..', 'config', 'firebase_keys', `${appId}.json`);
-    if (fs.existsSync(keyPath)) {
-      fs.unlinkSync(keyPath);
     }
 
     // Drop dynamic collections associated with the app

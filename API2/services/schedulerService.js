@@ -1,11 +1,10 @@
 const schedule = require("node-schedule");
-const fs = require('fs');
-const path = require('path');
 const { getMessaging } = require('firebase-admin/messaging');
 const { getFirebaseApp } = require('../config/firebase');
 const { getTitleModel } = require("../models/titleModel");
 const { getSettingsModel } = require("../models/SettingsModel");
 const { getLogModel } = require("../models/LogModel");
+const AppModel = require('../models/AppModel');
 
 // Store active cron jobs so we can cancel/re-create them
 let activeJobs = [];
@@ -15,7 +14,7 @@ let activeJobs = [];
  */
 const sendFirebaseNotification = async (appId, title, description, topic = "all") => {
   try {
-    const app = getFirebaseApp(appId);
+    const app = await getFirebaseApp(appId);
     const messaging = getMessaging(app);
 
     const message = {
@@ -106,43 +105,39 @@ const initScheduler = async () => {
     let totalJobs = 0;
     let appsConfigured = 0;
 
-    // 2. Discover all apps from firebase_keys directory
-    const keysDir = path.join(__dirname, '..', 'config', 'firebase_keys');
-    if (fs.existsSync(keysDir)) {
-      const files = fs.readdirSync(keysDir);
-      for (const file of files) {
-        if (file.endsWith('.json')) {
-          const appId = file.replace('.json', '');
+    // 2. Discover all apps from MongoDB
+    const apps = await AppModel.find({});
+    
+    for (const appDoc of apps) {
+      const appId = appDoc.appId;
+      
+      // Fetch settings for this app
+      const Settings = getSettingsModel(appId);
+      const settings = await Settings.findOne({ appId });
+      
+      if (settings && settings.notificationTimes && settings.notificationTimes.length > 0) {
+        appsConfigured++;
+        
+        settings.notificationTimes.forEach((timeStr) => {
+          const [hour, minute] = timeStr.split(":");
           
-          // Fetch settings for this app
-          const Settings = getSettingsModel(appId);
-          const settings = await Settings.findOne({ appId });
-          
-          if (settings && settings.notificationTimes && settings.notificationTimes.length > 0) {
-            appsConfigured++;
-            
-            settings.notificationTimes.forEach((timeStr) => {
-              const [hour, minute] = timeStr.split(":");
-              
-              if (!hour || !minute) {
-                 console.log(`⚠️ [${appId}] Invalid time format: ${timeStr}. Expected HH:mm`);
-                 return;
-              }
-
-              const cronExpression = `${minute} ${hour} * * *`;
-              console.log(`📅 [${appId}] Job scheduled for daily execution at ${timeStr} (Cron: ${cronExpression}, TZ: Asia/Kolkata)`);
-              
-              const job = schedule.scheduleJob({ rule: cronExpression, tz: 'Asia/Kolkata' }, async () => {
-                await executeJob(appId);
-              });
-
-              if (job) {
-                 activeJobs.push(job);
-                 totalJobs++;
-              }
-            });
+          if (!hour || !minute) {
+             console.log(`⚠️ [${appId}] Invalid time format: ${timeStr}. Expected HH:mm`);
+             return;
           }
-        }
+
+          const cronExpression = `${minute} ${hour} * * *`;
+          console.log(`📅 [${appId}] Job scheduled for daily execution at ${timeStr} (Cron: ${cronExpression}, TZ: Asia/Kolkata)`);
+          
+          const job = schedule.scheduleJob({ rule: cronExpression, tz: 'Asia/Kolkata' }, async () => {
+            await executeJob(appId);
+          });
+
+          if (job) {
+             activeJobs.push(job);
+             totalJobs++;
+          }
+        });
       }
     }
 

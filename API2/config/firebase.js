@@ -1,21 +1,20 @@
 const { initializeApp, cert, getApp, getApps, deleteApp } = require('firebase-admin/app');
-const path = require('path');
-const fs = require('fs');
+const AppModel = require('../models/AppModel');
 
-const getFirebaseApp = (appId) => {
+const getFirebaseApp = async (appId) => {
   try {
     const existingApp = getApps().find(app => app.name === appId);
     if (existingApp) {
       return existingApp;
     }
 
-    const keyPath = path.join(__dirname, 'firebase_keys', `${appId}.json`);
+    const appDoc = await AppModel.findOne({ appId });
     
-    if (!fs.existsSync(keyPath)) {
-      throw new Error(`Firebase service account key not found for appId: ${appId} at ${keyPath}`);
+    if (!appDoc || !appDoc.firebaseKeyJson) {
+      throw new Error(`Firebase service account key not found in DB for appId: ${appId}`);
     }
 
-    const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf8'));
+    const serviceAccount = JSON.parse(appDoc.firebaseKeyJson);
     
     const app = initializeApp({
       credential: cert(serviceAccount)
@@ -36,7 +35,7 @@ const reinitializeFirebaseApp = async (appId) => {
       await deleteApp(existingApp);
       console.log(`🔄 Deleted existing Firebase App for appId: ${appId}`);
     }
-    return getFirebaseApp(appId);
+    return await getFirebaseApp(appId);
   } catch (error) {
     console.error(`❌ Error reinitializing Firebase app for ${appId}:`, error.message);
     throw error;
