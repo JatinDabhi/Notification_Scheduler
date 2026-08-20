@@ -5,6 +5,7 @@ const { getMessaging } = require('firebase-admin/messaging');
 const { getFirebaseApp } = require('../config/firebase');
 const { getTitleModel } = require("../models/titleModel");
 const { getSettingsModel } = require("../models/SettingsModel");
+const { getLogModel } = require("../models/LogModel");
 
 // Store active cron jobs so we can cancel/re-create them
 let activeJobs = [];
@@ -30,10 +31,10 @@ const sendFirebaseNotification = async (appId, title, description, topic = "all"
 
     const response = await messaging.send(message);
     console.log(`✅ [${appId}] Firebase notification sent successfully:`, response);
-    return true;
+    return { success: true };
   } catch (error) {
     console.error(`❌ [${appId}] Error sending Firebase notification:`, error.message);
-    return false;
+    return { success: false, error: error.message };
   }
 };
 
@@ -42,6 +43,7 @@ const sendFirebaseNotification = async (appId, title, description, topic = "all"
  */
 const executeJob = async (appId) => {
   console.log(`\n⏰ [${new Date().toISOString()}] ================= FIFO SCHEDULED TRIGGER [${appId}] =================`);
+  const Log = getLogModel(appId);
   try {
     const Title = getTitleModel(appId);
 
@@ -52,6 +54,10 @@ const executeJob = async (appId) => {
 
     if (!item) {
       console.log(`ℹ️ [${appId}] No queued notifications found. Nothing to send.`);
+      await Log.create({
+        appId, actionType: "schedule", status: "skipped", 
+        reason: "No queued notifications found.", title: "N/A", description: "N/A"
+      });
       return;
     }
 
@@ -60,18 +66,30 @@ const executeJob = async (appId) => {
     console.log(`📌 Description: "${item.description}"`);
 
     // Send the notification
-    const success = await sendFirebaseNotification(appId, item.title, item.description);
+    const result = await sendFirebaseNotification(appId, item.title, item.description);
 
-    if (success) {
+    if (result.success) {
       // Auto-delete item from MongoDB after sending
       await Title.findByIdAndDelete(item._id);
+      await Log.create({
+        appId, actionType: "schedule", status: "success", 
+        reason: "Notification sent successfully.", title: item.title, description: item.description
+      });
       console.log(`✅ [${appId}] Notification auto-deleted from MongoDB: ${item._id}`);
     } else {
+      await Log.create({
+        appId, actionType: "schedule", status: "failed", 
+        reason: result.error || "Unknown Firebase error", title: item.title, description: item.description
+      });
       console.log(`❌ [${appId}] Failed to send, status not updated.`);
     }
 
   } catch (error) {
     console.error(`❌ [${appId}] Failed to execute scheduled task:`, error.message);
+    await Log.create({
+        appId, actionType: "schedule", status: "failed", 
+        reason: "Internal Task Error: " + error.message, title: "N/A", description: "N/A"
+    });
   }
   console.log(`=================================================================\n`);
 };

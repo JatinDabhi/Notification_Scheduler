@@ -37,7 +37,7 @@ class _AddAppScreenState extends State<AddAppScreen> {
       final response = await ApiService.registerApp(appId, appName, firebaseJson);
       
       if (response['success'] == true) {
-        appController.addApp(appId);
+        await appController.fetchApps();
         if (!mounted) return;
         Get.back(); // Go back to Apps Grid
         Get.snackbar('Success', response['message'] ?? 'App registered successfully!', backgroundColor: Colors.green.shade100);

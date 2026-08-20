@@ -1,9 +1,11 @@
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'api_service.dart';
 
 class AppController extends GetxController {
   RxString currentAppId = ''.obs;
-  RxList<String> savedApps = <String>[].obs;
+  RxList<Map<String, dynamic>> apps = <Map<String, dynamic>>[].obs;
+  RxBool isLoading = false.obs;
 
   @override
   void onInit() {
@@ -14,13 +16,22 @@ class AppController extends GetxController {
   Future<void> _loadData() async {
     final prefs = await SharedPreferences.getInstance();
     currentAppId.value = prefs.getString('currentAppId') ?? '';
-    
-    List<String> saved = prefs.getStringList('savedApps') ?? [];
-    if (saved.isEmpty) {
-      saved = ['dwarkadhish'];
-      await prefs.setStringList('savedApps', saved);
+    await fetchApps();
+  }
+
+  Future<void> fetchApps() async {
+    isLoading.value = true;
+    try {
+      final response = await ApiService.getAllApps();
+      if (response['success'] == true) {
+        final List<dynamic> data = response['data'];
+        apps.value = data.map((e) => e as Map<String, dynamic>).toList();
+      }
+    } catch (e) {
+      print('Error fetching apps: $e');
+    } finally {
+      isLoading.value = false;
     }
-    savedApps.value = saved;
   }
 
   Future<void> setAppId(String appId) async {
@@ -29,21 +40,20 @@ class AppController extends GetxController {
     await prefs.setString('currentAppId', appId);
   }
 
-  Future<void> addApp(String appId) async {
-    if (!savedApps.contains(appId)) {
-      savedApps.add(appId);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList('savedApps', savedApps.toList());
-    }
-  }
-
   Future<void> removeApp(String appId) async {
-    savedApps.remove(appId);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList('savedApps', savedApps.toList());
-    if (currentAppId.value == appId) {
-      currentAppId.value = '';
-      await prefs.remove('currentAppId');
+    try {
+      final response = await ApiService.deleteApp(appId);
+      if (response['success'] == true) {
+        apps.removeWhere((app) => app['appId'] == appId);
+        if (currentAppId.value == appId) {
+          currentAppId.value = '';
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('currentAppId');
+        }
+      }
+    } catch (e) {
+      print('Error deleting app: $e');
+      Get.snackbar('Error', 'Failed to delete app: $e');
     }
   }
 }

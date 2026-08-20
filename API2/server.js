@@ -32,6 +32,7 @@ app.get("/", (req, res) => {
 app.use("/api/titles", titleRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/apps", require("./routes/appRoutes"));
+app.use("/api/logs", require("./routes/logRoutes"));
 
 // Scheduled trigger callback endpoint
 app.post("/title-triggered", (req, res) => {

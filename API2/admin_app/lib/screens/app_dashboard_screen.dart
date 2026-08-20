@@ -6,7 +6,7 @@ import '../app_controller.dart';
 import 'tabs/notifications_tab.dart';
 import 'tabs/schedule_tab.dart';
 import 'add_notification_screen.dart';
-
+import 'logs_screen.dart';
 class AppDashboardScreen extends StatefulWidget {
   const AppDashboardScreen({Key? key}) : super(key: key);
 
@@ -156,13 +156,17 @@ class _AppDashboardScreenState extends State<AppDashboardScreen> {
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: const Color(0xFF8B5CF6).withOpacity(0.1),
-              shape: BoxShape.circle,
+          InkWell(
+            onTap: () => Get.to(() => LogsScreen(appId: appController.currentAppId.value)),
+            borderRadius: BorderRadius.circular(50),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF10B981).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.receipt_long_rounded, color: Color(0xFF10B981), size: 20),
             ),
-            child: const Icon(Icons.dashboard_rounded, color: Color(0xFF8B5CF6), size: 20),
           ),
         ],
       ),

@@ -14,8 +14,6 @@ class AppSelectionScreen extends StatelessWidget {
     // Pre-fill if already saved
     if (appController.currentAppId.value.isNotEmpty) {
       appIdController.text = appController.currentAppId.value;
-    } else {
-      appIdController.text = 'dwarkadhish'; // Default
     }
 
     return Scaffold(
@@ -37,7 +35,7 @@ class AppSelectionScreen extends StatelessWidget {
               controller: appIdController,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
-                labelText: 'App ID (e.g. dwarkadhish)',
+                labelText: 'App ID (e.g. myapp)',
                 prefixIcon: Icon(Icons.phone_android),
               ),
             ),

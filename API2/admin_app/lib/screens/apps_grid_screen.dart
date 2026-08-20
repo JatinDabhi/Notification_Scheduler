@@ -48,7 +48,7 @@ class _AppsGridScreenState extends State<AppsGridScreen> {
                 const SizedBox(height: 30),
                 _buildAnimated(
                   delay: 100,
-                  child: Obx(() => _buildBanner(appController.savedApps.length)),
+                  child: Obx(() => _buildBanner(appController.apps.length)),
                 ),
                 const SizedBox(height: 24),
                 _buildAnimated(
@@ -68,7 +68,9 @@ class _AppsGridScreenState extends State<AppsGridScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                Obx(() => _buildAppsList(appController)),
+                Obx(() => appController.isLoading.value 
+                    ? const Center(child: CircularProgressIndicator()) 
+                    : _buildAppsList(appController)),
                 const SizedBox(height: 24),
                 _buildAnimated(
                   delay: 600,
@@ -268,9 +270,11 @@ class _AppsGridScreenState extends State<AppsGridScreen> {
   }
 
   Widget _buildAppsList(AppController controller) {
-    final allApps = controller.savedApps;
+    final allApps = controller.apps;
     final apps = allApps
-        .where((app) => app.toLowerCase().contains(searchQuery.value.toLowerCase()))
+        .where((app) => 
+            (app['appName'] ?? '').toString().toLowerCase().contains(searchQuery.value.toLowerCase()) ||
+            (app['appId'] ?? '').toString().toLowerCase().contains(searchQuery.value.toLowerCase()))
         .toList();
     
     if (apps.isEmpty) {
@@ -299,7 +303,9 @@ class _AppsGridScreenState extends State<AppsGridScreen> {
     );
   }
 
-  Widget _buildAppCard(String appId, AppController controller, int index) {
+  Widget _buildAppCard(Map<String, dynamic> app, AppController controller, int index) {
+    final appId = app['appId']?.toString() ?? '';
+    final appName = app['appName']?.toString() ?? appId;
     // Dynamic modern gradients
     final List<List<Color>> gradients = [
       [const Color(0xFF00C6FF), const Color(0xFF0072FF)],
@@ -405,9 +411,9 @@ class _AppsGridScreenState extends State<AppsGridScreen> {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              'Devotional Wallpapers',
+                              appName,
                               style: GoogleFonts.inter(
-                                fontSize: 10,
+                                fontSize: 12,
                                 color: const Color(0xFF6B7280),
                                 fontWeight: FontWeight.w500,
                               ),

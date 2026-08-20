@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const { getFirebaseApp } = require('../config/firebase');
-
+const { getFirebaseApp, reinitializeFirebaseApp } = require('../config/firebase');
+const AppModel = require('../models/AppModel');
 // @desc    Register a completely new app dynamically
 // @route   POST /api/apps/register
 // @access  Public
@@ -44,7 +44,7 @@ exports.registerApp = async (req, res) => {
 
     // 4. Initialize Firebase App immediately to verify it works
     try {
-      getFirebaseApp(cleanAppId);
+      await reinitializeFirebaseApp(cleanAppId);
     } catch (firebaseErr) {
       // If initialization fails, we might want to delete the invalid file
       if (fs.existsSync(keyPath)) fs.unlinkSync(keyPath);
@@ -54,10 +54,69 @@ exports.registerApp = async (req, res) => {
       });
     }
 
+    // 5. Save App in Database
+    const finalAppName = appName || cleanAppId;
+    await AppModel.findOneAndUpdate(
+      { appId: cleanAppId },
+      { appName: finalAppName },
+      { upsert: true, new: true }
+    );
+
     res.status(200).json({
       success: true,
-      message: `App '${appName || cleanAppId}' registered successfully!`,
+      message: `App '${finalAppName}' registered successfully!`,
       appId: cleanAppId,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Get all registered apps
+// @route   GET /api/apps
+// @access  Public
+exports.getAllApps = async (req, res) => {
+  try {
+    const apps = await AppModel.find({}).sort({ createdAt: -1 });
+    res.status(200).json({
+      success: true,
+      data: apps,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+      error: error.message,
+    });
+  }
+};
+
+// @desc    Delete a registered app
+// @route   DELETE /api/apps/:appId
+// @access  Public
+exports.deleteApp = async (req, res) => {
+  try {
+    const { appId } = req.params;
+    
+    // Delete from DB
+    const deletedApp = await AppModel.findOneAndDelete({ appId });
+    if (!deletedApp) {
+      return res.status(404).json({ success: false, message: "App not found" });
+    }
+
+    // Delete JSON file
+    const keyPath = path.join(__dirname, '..', 'config', 'firebase_keys', `${appId}.json`);
+    if (fs.existsSync(keyPath)) {
+      fs.unlinkSync(keyPath);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "App deleted successfully",
     });
   } catch (error) {
     res.status(500).json({

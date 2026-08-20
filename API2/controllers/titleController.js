@@ -1,6 +1,6 @@
 const { getTitleModel } = require("../models/titleModel");
 const { sendFirebaseNotification } = require("../services/schedulerService");
-
+const { getLogModel } = require("../models/LogModel");
 
 // @desc    Create a new Title and Description (Immediate, Scheduled or Bulk)
 // @route   POST /api/titles
@@ -257,10 +257,21 @@ exports.triggerInstant = async (req, res) => {
       return res.status(400).json({ success: false, message: "Please provide appId, title, and description" });
     }
 
-    const success = await sendFirebaseNotification(appId, title, description);
-    if (!success) {
+    const Log = getLogModel(appId);
+    const result = await sendFirebaseNotification(appId, title, description);
+    
+    if (!result.success) {
+      await Log.create({
+        appId, actionType: "instant", status: "failed", 
+        reason: result.error || "Unknown Firebase error", title, description
+      });
       return res.status(500).json({ success: false, message: "Failed to send notification via Firebase" });
     }
+
+    await Log.create({
+      appId, actionType: "instant", status: "success", 
+      reason: "Notification sent successfully.", title, description
+    });
 
     res.status(200).json({
       success: true,
@@ -292,10 +303,21 @@ exports.triggerTitleId = async (req, res) => {
       return res.status(404).json({ success: false, message: "Title not found" });
     }
 
-    const success = await sendFirebaseNotification(appId, titleDoc.title, titleDoc.description);
-    if (!success) {
+    const Log = getLogModel(appId);
+    const result = await sendFirebaseNotification(appId, titleDoc.title, titleDoc.description);
+    
+    if (!result.success) {
+      await Log.create({
+        appId, actionType: "instant", status: "failed", 
+        reason: result.error || "Unknown Firebase error", title: titleDoc.title, description: titleDoc.description
+      });
       return res.status(500).json({ success: false, message: "Failed to send notification via Firebase" });
     }
+
+    await Log.create({
+      appId, actionType: "instant", status: "success", 
+      reason: "Notification sent successfully.", title: titleDoc.title, description: titleDoc.description
+    });
 
     // Auto-delete after instant trigger
     await Title.findByIdAndDelete(titleDoc._id);
