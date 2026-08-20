@@ -1,7 +1,10 @@
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose');
 const { getFirebaseApp, reinitializeFirebaseApp } = require('../config/firebase');
 const AppModel = require('../models/AppModel');
+const { initScheduler } = require('../services/schedulerService');
+
 // @desc    Register a completely new app dynamically
 // @route   POST /api/apps/register
 // @access  Public
@@ -113,6 +116,20 @@ exports.deleteApp = async (req, res) => {
     if (fs.existsSync(keyPath)) {
       fs.unlinkSync(keyPath);
     }
+
+    // Drop dynamic collections associated with the app
+    const cleanAppId = appId.trim().toLowerCase();
+    const collectionsToDrop = [`${cleanAppId}_titles`, `${cleanAppId}_settings`, `${cleanAppId}_logs`];
+    for (const collectionName of collectionsToDrop) {
+      try {
+        await mongoose.connection.db.dropCollection(collectionName);
+      } catch (err) {
+        // Ignore if collection doesn't exist
+      }
+    }
+    
+    // Reload scheduler to cancel any cron jobs for the deleted app
+    await initScheduler();
 
     res.status(200).json({
       success: true,

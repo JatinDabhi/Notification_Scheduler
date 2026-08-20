@@ -270,11 +270,14 @@ class _AppsGridScreenState extends State<AppsGridScreen> {
   }
 
   Widget _buildAppsList(AppController controller) {
-    final allApps = controller.apps;
+    // Read observables unconditionally so GetX Obx tracks them
+    final allApps = controller.apps.toList();
+    final query = searchQuery.value.toLowerCase();
+    
     final apps = allApps
         .where((app) => 
-            (app['appName'] ?? '').toString().toLowerCase().contains(searchQuery.value.toLowerCase()) ||
-            (app['appId'] ?? '').toString().toLowerCase().contains(searchQuery.value.toLowerCase()))
+            (app['appName'] ?? '').toString().toLowerCase().contains(query) ||
+            (app['appId'] ?? '').toString().toLowerCase().contains(query))
         .toList();
     
     if (apps.isEmpty) {

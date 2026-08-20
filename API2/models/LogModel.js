@@ -34,7 +34,8 @@ const logSchema = new mongoose.Schema({
 
 // Using dynamic collections for logs as well
 const getLogModel = (appId) => {
-  const collectionName = `logs_${appId}`;
+  const cleanAppId = appId.trim().toLowerCase();
+  const collectionName = `${cleanAppId}_logs`;
   
   if (mongoose.models[collectionName]) {
     return mongoose.models[collectionName];

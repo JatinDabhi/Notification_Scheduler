@@ -25,7 +25,7 @@ class AppController extends GetxController {
       final response = await ApiService.getAllApps();
       if (response['success'] == true) {
         final List<dynamic> data = response['data'];
-        apps.value = data.map((e) => e as Map<String, dynamic>).toList();
+        apps.assignAll(data.map((e) => e as Map<String, dynamic>).toList());
       }
     } catch (e) {
       print('Error fetching apps: $e');

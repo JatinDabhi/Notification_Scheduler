@@ -31,7 +31,7 @@ class _LogsScreenState extends State<LogsScreen> {
     try {
       final response = await ApiService.getLogs(widget.appId);
       setState(() {
-        _logs = response['logs'] ?? [];
+        _logs = response['data'] ?? [];
         _isLoading = false;
       });
     } catch (e) {
@@ -119,13 +119,13 @@ class _LogsScreenState extends State<LogsScreen> {
                       itemBuilder: (context, index) {
                         final log = _logs[index];
                         final status = log['status'] ?? 'Unknown';
-                        final type = log['type'] ?? 'Unknown';
+                        final type = log['actionType'] ?? 'Unknown';
                         final reason = log['reason'] ?? '';
                         final title = log['title'] ?? 'No Title';
                         
                         DateTime? timestamp;
-                        if (log['timestamp'] != null) {
-                          timestamp = DateTime.tryParse(log['timestamp']);
+                        if (log['createdAt'] != null) {
+                          timestamp = DateTime.tryParse(log['createdAt']);
                         }
 
                         final timeString = timestamp != null
