@@ -9,7 +9,17 @@ try {
   // Ignore DNS override errors if restricted
 }
 
+let cachedConn = null;
+
 const connectDB = async () => {
+  if (mongoose.connection.readyState >= 1) {
+    return mongoose.connection;
+  }
+
+  if (cachedConn) {
+    return cachedConn;
+  }
+
   try {
     const mongoUri = process.env.MONGO_URI || process.env.MONGO_URL || "mongodb://localhost:27017/title_db";
     
@@ -17,13 +27,16 @@ const connectDB = async () => {
       console.warn("⚠️ WARNING: Please replace '<db_password>' in your .env file with your actual MongoDB Atlas database password!");
     }
 
-    const conn = await mongoose.connect(mongoUri);
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    cachedConn = await mongoose.connect(mongoUri);
+    console.log(`✅ MongoDB Connected: ${cachedConn.connection.host}`);
+    return cachedConn;
   } catch (error) {
+    cachedConn = null;
     console.error(`❌ MongoDB Connection Error: ${error.message}`);
     if (error.message.includes("querySrv") || error.message.includes("ECONNREFUSED")) {
       console.error("💡 Tip: Check your network/DNS connection or replace '<db_password>' with your actual password in .env. Also ensure your IP address is whitelisted in MongoDB Atlas (Network Access -> Allow Access From Anywhere).");
     }
+    throw error;
   }
 };
 

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'https://notification-scheduler-l4b0.onrender.com/api';
+  static const String baseUrl = 'https://ready-dots-pick.loca.lt/api';
 
   // Localtunnel requires this header to bypass the warning screen and return JSON directly
   static const Map<String, String> defaultHeaders = {

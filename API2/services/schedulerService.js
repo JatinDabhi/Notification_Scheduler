@@ -57,7 +57,7 @@ const executeJob = async (appId) => {
         appId, actionType: "schedule", status: "skipped", 
         reason: "No queued notifications found.", title: "N/A", description: "N/A"
       });
-      return;
+      return { success: false, reason: "No queued notifications found" };
     }
 
     console.log(`📌 Picked Title ID: ${item._id}`);
@@ -75,12 +75,14 @@ const executeJob = async (appId) => {
         reason: "Notification sent successfully.", title: item.title, description: item.description
       });
       console.log(`✅ [${appId}] Notification auto-deleted from MongoDB: ${item._id}`);
+      return { success: true, sent: { title: item.title, description: item.description, id: item._id } };
     } else {
       await Log.create({
         appId, actionType: "schedule", status: "failed", 
         reason: result.error || "Unknown Firebase error", title: item.title, description: item.description
       });
       console.log(`❌ [${appId}] Failed to send, status not updated.`);
+      return { success: false, error: result.error || "Unknown Firebase error" };
     }
 
   } catch (error) {
@@ -89,8 +91,108 @@ const executeJob = async (appId) => {
         appId, actionType: "schedule", status: "failed", 
         reason: "Internal Task Error: " + error.message, title: "N/A", description: "N/A"
     });
+    return { success: false, error: error.message };
+  } finally {
+    console.log(`=================================================================\n`);
   }
-  console.log(`=================================================================\n`);
+};
+
+const lastTriggeredMinute = {};
+
+/**
+ * Trigger cron for apps matching current time in Asia/Kolkata
+ */
+const triggerCronForCurrentTime = async () => {
+  const now = new Date();
+  const istTimeStr = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(now);
+
+  console.log(`⏱️ Trigger Cron checking at IST time: ${istTimeStr}`);
+
+  const apps = await AppModel.find({});
+  const results = [];
+
+  for (const appDoc of apps) {
+    const appId = appDoc.appId;
+    const Settings = getSettingsModel(appId);
+    const settings = await Settings.findOne({ appId });
+
+    if (settings && settings.notificationTimes && settings.notificationTimes.includes(istTimeStr)) {
+      if (lastTriggeredMinute[appId] === istTimeStr) {
+        results.push({ appId, triggered: false, reason: "Already triggered in this minute", time: istTimeStr });
+        continue;
+      }
+      lastTriggeredMinute[appId] = istTimeStr;
+      console.log(`🎯 Matched schedule for ${appId} at ${istTimeStr}! Executing job...`);
+      const res = await executeJob(appId);
+      results.push({ appId, triggered: true, time: istTimeStr, result: res });
+    } else {
+      results.push({ appId, triggered: false, time: istTimeStr, configuredTimes: settings?.notificationTimes || [] });
+    }
+  }
+
+  return { time: istTimeStr, results };
+};
+
+/**
+ * Trigger cron for all apps immediately
+ */
+const triggerCronForAllApps = async () => {
+  const apps = await AppModel.find({});
+  const results = [];
+
+  for (const appDoc of apps) {
+    const appId = appDoc.appId;
+    const res = await executeJob(appId);
+    results.push({ appId, result: res });
+  }
+
+  return results;
+};
+
+/**
+ * Get cron status & scheduled times
+ */
+const getCronStatus = async () => {
+  const now = new Date();
+  const istTimeStr = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).format(now);
+
+  const apps = await AppModel.find({});
+  const appStatuses = [];
+
+  for (const appDoc of apps) {
+    const appId = appDoc.appId;
+    const Settings = getSettingsModel(appId);
+    const Title = getTitleModel(appId);
+
+    const settings = await Settings.findOne({ appId });
+    const pendingCount = await Title.countDocuments({
+      status: { $in: ["queued", "immediate", "pending"] }
+    });
+
+    appStatuses.push({
+      appId,
+      appName: appDoc.appName,
+      notificationTimes: settings?.notificationTimes || [],
+      pendingNotificationsCount: pendingCount
+    });
+  }
+
+  return {
+    currentTimeIST: istTimeStr,
+    totalApps: apps.length,
+    apps: appStatuses
+  };
 };
 
 /**
@@ -152,4 +254,7 @@ module.exports = {
   executeJob,
   initScheduler,
   sendFirebaseNotification,
+  triggerCronForCurrentTime,
+  triggerCronForAllApps,
+  getCronStatus
 };
