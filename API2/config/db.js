@@ -1,12 +1,14 @@
 const mongoose = require("mongoose");
 const dns = require("dns");
 
-// Set public DNS servers to resolve MongoDB SRV records on Windows local networks
-try {
-  dns.setDefaultResultOrder("ipv4first");
-  dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
-} catch (err) {
-  // Ignore DNS override errors if restricted
+// Set public DNS servers to resolve MongoDB SRV records on Windows local networks only
+if (!process.env.VERCEL) {
+  try {
+    dns.setDefaultResultOrder("ipv4first");
+    dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
+  } catch (err) {
+    // Ignore DNS override errors if restricted
+  }
 }
 
 let cachedConn = null;
