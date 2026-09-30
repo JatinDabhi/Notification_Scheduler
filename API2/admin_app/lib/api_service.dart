@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'https://ready-dots-pick.loca.lt/api';
+  // Vercel Live Production API URL
+  static const String baseUrl = 'https://notification-scheduler.vercel.app/api';
 
   // Localtunnel requires this header to bypass the warning screen and return JSON directly
   static const Map<String, String> defaultHeaders = {

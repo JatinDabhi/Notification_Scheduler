@@ -265,7 +265,10 @@ exports.triggerInstant = async (req, res) => {
         appId, actionType: "instant", status: "failed", 
         reason: result.error || "Unknown Firebase error", title, description
       });
-      return res.status(500).json({ success: false, message: "Failed to send notification via Firebase" });
+      return res.status(500).json({ 
+        success: false, 
+        message: result.error ? `Firebase Error: ${result.error}` : "Failed to send notification via Firebase" 
+      });
     }
 
     await Log.create({
@@ -311,7 +314,10 @@ exports.triggerTitleId = async (req, res) => {
         appId, actionType: "instant", status: "failed", 
         reason: result.error || "Unknown Firebase error", title: titleDoc.title, description: titleDoc.description
       });
-      return res.status(500).json({ success: false, message: "Failed to send notification via Firebase" });
+      return res.status(500).json({ 
+        success: false, 
+        message: result.error ? `Firebase Error: ${result.error}` : "Failed to send notification via Firebase" 
+      });
     }
 
     await Log.create({
