@@ -1,6 +1,6 @@
 const schedule = require("node-schedule");
 const { getMessaging } = require('firebase-admin/messaging');
-const { getFirebaseApp } = require('../config/firebase');
+const { getFirebaseApp, reinitializeFirebaseApp } = require('../config/firebase');
 const { getTitleModel } = require("../models/titleModel");
 const { getSettingsModel } = require("../models/SettingsModel");
 const { getLogModel } = require("../models/LogModel");
@@ -14,8 +14,8 @@ let activeJobs = [];
  */
 const sendFirebaseNotification = async (appId, title, description, topic = "all") => {
   try {
-    const app = await getFirebaseApp(appId);
-    const messaging = getMessaging(app);
+    let app = await getFirebaseApp(appId);
+    let messaging = getMessaging(app);
 
     const message = {
       notification: {
@@ -50,7 +50,16 @@ const sendFirebaseNotification = async (appId, title, description, topic = "all"
       },
     };
 
-    const response = await messaging.send(message);
+    let response;
+    try {
+      response = await messaging.send(message);
+    } catch (sendErr) {
+      console.warn(`⚠️ [${appId}] First send attempt failed: ${sendErr.message}. Reinitializing from MongoDB and retrying...`);
+      app = await reinitializeFirebaseApp(appId);
+      messaging = getMessaging(app);
+      response = await messaging.send(message);
+    }
+
     console.log(`✅ [${appId}] Firebase notification sent successfully:`, response);
     return { success: true, messageId: response };
   } catch (error) {
