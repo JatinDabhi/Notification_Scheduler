@@ -22,15 +22,37 @@ const sendFirebaseNotification = async (appId, title, description, topic = "all"
         title: title,
         body: description,
       },
+      data: {
+        title: title,
+        body: description,
+        content_type: "general",
+        click_action: "FLUTTER_NOTIFICATION_CLICK"
+      },
       topic: topic,
       android: {
         priority: "high",
+        notification: {
+          channelId: "high_importance_channel",
+          priority: "high",
+          sound: "default",
+          defaultSound: true,
+          defaultVibrateTimings: true,
+        },
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+            badge: 1,
+            contentAvailable: true,
+          },
+        },
       },
     };
 
     const response = await messaging.send(message);
     console.log(`✅ [${appId}] Firebase notification sent successfully:`, response);
-    return { success: true };
+    return { success: true, messageId: response };
   } catch (error) {
     console.error(`❌ [${appId}] Error sending Firebase notification:`, error.message);
     return { success: false, error: error.message };

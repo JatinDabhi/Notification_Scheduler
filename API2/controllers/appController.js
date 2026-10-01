@@ -46,15 +46,16 @@ exports.registerApp = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    // 3. Initialize Firebase App immediately to verify it works
+    // 3. Initialize Firebase App and verify token with Google OAuth2
     try {
-      await reinitializeFirebaseApp(cleanAppId);
+      const testApp = await reinitializeFirebaseApp(cleanAppId);
+      await testApp.options.credential.getAccessToken();
     } catch (firebaseErr) {
-      // If initialization fails, delete the invalid DB record
+      // If initialization or token validation fails, delete the invalid DB record
       await AppModel.findOneAndDelete({ appId: cleanAppId });
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        message: "Failed to initialize Firebase app: " + firebaseErr.message,
+        message: "Firebase key validation failed: " + firebaseErr.message + ". Make sure the key has not been revoked.",
       });
     }
 

@@ -4,5 +4,7 @@ const { registerApp, getAllApps, deleteApp } = require("../controllers/appContro
 const router = express.Router();
 
 router.get("/", getAllApps);
+router.post("/register", registerApp);
+router.delete("/:appId", deleteApp);
 
 module.exports = router;
